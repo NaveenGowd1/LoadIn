@@ -1,3 +1,5 @@
+from urllib import request
+
 from drivers.models import DriverProfile
 
 from rest_framework import generics
@@ -15,7 +17,7 @@ from rest_framework.exceptions import NotFound
 from .models import Load
 from accounts.permissions import IsDriver
 
-from django.db import models
+from django.db import models, transaction
 
 
 class CreateLoadAPIView(generics.CreateAPIView):
@@ -77,16 +79,20 @@ class AcceptLoadAPIView(generics.GenericAPIView):
         IsDriver,
     ]
 
+    @transaction.atomic
     def post(self, request, pk):
 
         try:
-            load = Load.objects.get(pk=pk)
+            load = Load.objects.select_for_update().get(pk=pk)
         except Load.DoesNotExist:
             raise NotFound("Load does not exist.")
 
         # Check driver profile
+        # Lock the driver's profile row
         try:
-            profile = request.user.driver_profile
+            profile = DriverProfile.objects.select_for_update().get(
+            user=request.user
+            )
         except DriverProfile.DoesNotExist:
             return Response(
                 {"detail": "Complete your driver profile first."},
@@ -122,12 +128,14 @@ class AcceptLoadAPIView(generics.GenericAPIView):
         
         loads = Load.objects.filter(assigned_driver=request.user)
         
-        active_load_exists = False
-        for st in loads:
-            if st.status in ["ASSIGNED", "IN_TRANSIT"]:
-                active_load_exists = True
-                break
-
+        active_load_exists = Load.objects.filter(
+            assigned_driver=request.user,
+            status__in=[
+                Load.Status.ASSIGNED,
+                Load.Status.IN_TRANSIT,
+            ],
+        ).exists()
+        
         if active_load_exists:
             return Response(
                 {
