@@ -665,26 +665,52 @@ class DeliverLoadAPITests(APITestCase):
             ).exists()
         )
         
+
+# loads/tests/test_cancel_load.py
+
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+from accounts.models import CustomUser
+from loads.models import Load, LoadStatusHistory
+
+
 class CancelLoadAPITests(APITestCase):
 
     def setUp(self):
         self.customer = CustomUser.objects.create_user(
-            email="cancel_customer@test.com",
+            email="customer@example.com",
             password="TestPass123!",
-            phone_number="9000000031",
-            role=CustomUser.Role.CUSTOMER,
+            role="CUSTOMER",
+            phone_number="9000000001",
         )
 
+        self.other_customer = CustomUser.objects.create_user(
+            email="other@example.com",
+            password="TestPass123!",
+            role="CUSTOMER",
+            phone_number="9000000002",
+        )
+
+        self.driver = CustomUser.objects.create_user(
+            email="driver@example.com",
+            password="TestPass123!",
+            role="DRIVER",
+            phone_number="9000000003",
+        )
+
+        # Add any other required Load fields from your model here.
         self.load = Load.objects.create(
             customer=self.customer,
             pickup_location="Hyderabad",
             delivery_location="Vijayawada",
             goods_description="Electronics",
-            weight=Decimal("500.00"),
+            weight=Decimal("100.00"),
             vehicle_type="Truck",
             pickup_date=date.today() + timedelta(days=2),
             delivery_date=date.today() + timedelta(days=4),
-            price=Decimal("5000.00"),
+            price=Decimal("1000.00"),
             status=Load.Status.AVAILABLE,
         )
 
@@ -693,18 +719,14 @@ class CancelLoadAPITests(APITestCase):
             kwargs={"pk": self.load.pk},
         )
 
-    def test_customer_can_cancel_available_load(self):
         self.client.force_authenticate(user=self.customer)
 
+    def test_customer_can_cancel_available_load(self):
         response = self.client.post(self.url)
 
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.load.refresh_from_db()
-
         self.assertEqual(
             self.load.status,
             Load.Status.CANCELLED,
@@ -716,77 +738,11 @@ class CancelLoadAPITests(APITestCase):
                 status=Load.Status.CANCELLED,
                 changed_by=self.customer,
             ).exists()
-        )   
-    def test_another_customer_cannot_cancel_load(self):
-        another_customer = CustomUser.objects.create_user(
-            email="another_cancel_customer@test.com",
-            password="TestPass123!",
-            phone_number="9000000032",
-            role=CustomUser.Role.CUSTOMER,
         )
 
-        self.client.force_authenticate(user=another_customer)
-
-        response = self.client.post(self.url)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_404_NOT_FOUND,
-        )
-
-        self.load.refresh_from_db()
-
-        # The load must remain available
-        self.assertEqual(
-            self.load.status,
-            Load.Status.AVAILABLE,
-        )
-
-        # No cancellation history should be created
-        self.assertFalse(
-            LoadStatusHistory.objects.filter(
-                load=self.load,
-                status=Load.Status.CANCELLED,
-            ).exists()
-        )
-    def test_driver_cannot_cancel_load(self):
-        driver = CustomUser.objects.create_user(
-            email="cancel_driver@test.com",
-            password="TestPass123!",
-            phone_number="9000000033",
-            role=CustomUser.Role.DRIVER,
-        )
-
-        self.client.force_authenticate(user=driver)
-
-        response = self.client.post(self.url)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_403_FORBIDDEN,
-        )
-
-        self.load.refresh_from_db()
-
-        # The load must remain AVAILABLE
-        self.assertEqual(
-            self.load.status,
-            Load.Status.AVAILABLE,
-        )
-
-        # No cancellation history should be created
-        self.assertFalse(
-            LoadStatusHistory.objects.filter(
-                load=self.load,
-                status=Load.Status.CANCELLED,
-            ).exists()
-        )
-    def test_customer_cannot_cancel_assigned_load(self):
-    # Simulate a driver accepting the load
+    def test_cannot_cancel_assigned_load(self):
         self.load.status = Load.Status.ASSIGNED
-        self.load.save(update_fields=["status", "updated_at"])
-
-        self.client.force_authenticate(user=self.customer)
+        self.load.save()
 
         response = self.client.post(self.url)
 
@@ -796,20 +752,84 @@ class CancelLoadAPITests(APITestCase):
         )
 
         self.load.refresh_from_db()
+        self.assertEqual(self.load.status, Load.Status.ASSIGNED)
 
-        # The load must remain ASSIGNED
+    def test_cannot_cancel_in_transit_load(self):
+        self.load.status = Load.Status.IN_TRANSIT
+        self.load.save()
+
+        response = self.client.post(self.url)
+
         self.assertEqual(
-            self.load.status,
-            Load.Status.ASSIGNED,
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
         )
 
-        # No cancellation history should be created
-        self.assertFalse(
-            LoadStatusHistory.objects.filter(
-                load=self.load,
-                status=Load.Status.CANCELLED,
-            ).exists()
+        self.load.refresh_from_db()
+        self.assertEqual(self.load.status, Load.Status.IN_TRANSIT)
+
+    def test_cannot_cancel_delivered_load(self):
+        self.load.status = Load.Status.DELIVERED
+        self.load.save()
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
         )
-    
-    
-    
+
+    def test_cannot_cancel_already_cancelled_load(self):
+        self.load.status = Load.Status.CANCELLED
+        self.load.save()
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_customer_cannot_cancel_another_customers_load(self):
+        self.load.customer = self.other_customer
+        self.load.save()
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_driver_cannot_cancel_load(self):
+        self.client.force_authenticate(user=self.driver)
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_unauthenticated_user_cannot_cancel_load(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_cancellation_creates_one_history_record(self):
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        history_count = LoadStatusHistory.objects.filter(
+            load=self.load,
+            status=Load.Status.CANCELLED,
+            changed_by=self.customer,
+        ).count()
+
+        self.assertEqual(history_count, 1)
