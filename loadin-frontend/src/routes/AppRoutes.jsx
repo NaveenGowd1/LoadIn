@@ -11,6 +11,7 @@ import DriverDashboard from "../pages/driver/DriverDashboard";
 import { RollerCoaster } from "lucide-react";
 import RoleSelection from "../pages/auth/RoleSelection";
 import ProtectedRoute from "./ProtectedRoute";
+import CreateLoad from "../pages/customer/CreateLoad";
 
 
 function AppRoutes() {
@@ -49,6 +50,7 @@ function AppRoutes() {
                         path="/customer/dashboard"
                         element={<CustomerDashboard />}
                     />
+                    <Route path="/customer/create-load" element={<CreateLoad />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRole="DRIVER" />}>
