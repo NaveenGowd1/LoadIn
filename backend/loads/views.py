@@ -373,56 +373,43 @@ from .models import Load
 
 
 class CancelLoadAPIView(generics.GenericAPIView):
-
-    permission_classes = [
-        IsAuthenticated,
-        IsCustomer,
-    ]
+    permission_classes = [IsAuthenticated, IsCustomer]
 
     def post(self, request, pk):
+        with transaction.atomic():
+            try:
+                load = (
+                    Load.objects
+                    .select_for_update()
+                    .get(pk=pk, customer=request.user)
+                )
+            except Load.DoesNotExist:
+                raise NotFound(
+                    "Load does not exist or you do not have access to it."
+                )
 
-        try:
-            load = Load.objects.get(
-                pk=pk,
-                customer=request.user
+            if load.status != Load.Status.AVAILABLE:
+                return Response(
+                    {"detail": "Only available loads can be cancelled."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            load.status = Load.Status.CANCELLED
+            load.save(update_fields=["status", "updated_at"])
+
+            LoadStatusHistory.objects.create(
+                load=load,
+                status=Load.Status.CANCELLED,
+                changed_by=request.user,
             )
-        except Load.DoesNotExist:
-            raise NotFound(
-                "Load does not exist or you do not have access to it."
-            )
-
-        if load.status != Load.Status.AVAILABLE:
-            return Response(
-                {
-                    "detail": (
-                        "Only available loads can be cancelled."
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        load.status = Load.Status.CANCELLED
-
-        load.save(
-            update_fields=[
-                "status",
-                "updated_at",
-            ]
-        )
-
-        LoadStatusHistory.objects.create(
-            load=load,
-            status=Load.Status.CANCELLED,
-            changed_by=request.user
-        )
 
         return Response(
             {
                 "message": "Load cancelled successfully.",
                 "load_id": load.id,
-                "status": load.status
+                "status": load.status,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 class LoadHistoryAPIView(generics.ListAPIView):

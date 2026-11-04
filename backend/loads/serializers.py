@@ -36,7 +36,18 @@ class LoadCustomerSerializer(serializers.ModelSerializer):
 from drivers.models import DriverProfile
 
 
+
 class LoadDriverSerializer(serializers.ModelSerializer):
+
+    first_name = serializers.CharField(
+        source="user.first_name",
+        read_only=True
+    )
+
+    last_name = serializers.CharField(
+        source="user.last_name",
+        read_only=True
+    )
 
     email = serializers.EmailField(
         source="user.email",
@@ -51,11 +62,14 @@ class LoadDriverSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverProfile
         fields = [
+            "first_name",
+            "last_name",
             "email",
             "phone_number",
             "vehicle_number",
             "vehicle_type",
         ]
+
         
 class LoadSerializer(serializers.ModelSerializer):
 
