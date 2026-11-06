@@ -7,13 +7,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     role = serializers.CharField(write_only=True)
 
-    # @classmethod
-    # def get_token(cls, user):
-    #     token = super().get_token(user)
-    #     token["role"] = user.role
-    #     token["email"] = user.email
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["role"] = user.role
+        token["email"] = user.email
 
-    #     return token
+        return token
 
     def validate(self, attrs):
 

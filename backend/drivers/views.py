@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from .models import DriverProfile
+from loads.models import Load
 from .serializers import DriverDashboardSerializer, DriverProfileSerializer
 from accounts.permissions import IsDriver, IsAdmin
 from rest_framework.exceptions import NotFound
@@ -192,10 +193,32 @@ class DriverDashboardAPIView(generics.GenericAPIView):
                     if can_accept_loads
                     else "WAIT_FOR_VERIFICATION"
                 ),
+                "shipment_summary": self.get_shipment_summary(request.user),
             },
 
             status=status.HTTP_200_OK
         )
+    def get_shipment_summary(self, user):
+
+        driver_loads = Load.objects.filter(
+            assigned_driver=user
+        )
+
+        return {
+            "total_shipments": driver_loads.count(),
+
+            "assigned": driver_loads.filter(
+                status=Load.Status.ASSIGNED
+            ).count(),
+
+            "in_transit": driver_loads.filter(
+                status=Load.Status.IN_TRANSIT
+            ).count(),
+
+            "delivered": driver_loads.filter(
+                status=Load.Status.DELIVERED
+            ).count(),
+    }
         
 class VerifyDriverAPIView(generics.GenericAPIView):
 

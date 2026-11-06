@@ -124,3 +124,49 @@ class LoadSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+
+class MatchLoadsSerializer(serializers.Serializer):
+    current_location = serializers.CharField(
+        max_length=255,
+        trim_whitespace=True
+    )
+
+    return_destination = serializers.CharField(
+        max_length=255,
+        trim_whitespace=True
+    )
+    
+class DriverLoadHistorySerializer(serializers.ModelSerializer):
+
+    load_id = serializers.IntegerField(
+        source="load.id",
+        read_only=True
+    )
+
+    pickup_location = serializers.CharField(
+        source="load.pickup_location",
+        read_only=True
+    )
+
+    delivery_location = serializers.CharField(
+        source="load.delivery_location",
+        read_only=True
+    )
+
+    changed_by_email = serializers.EmailField(
+        source="changed_by.email",
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta:
+        model = LoadStatusHistory
+        fields = [
+            "id",
+            "load_id",
+            "pickup_location",
+            "delivery_location",
+            "status",
+            "changed_by_email",
+            "changed_at",
+        ]

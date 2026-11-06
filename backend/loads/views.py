@@ -1,12 +1,12 @@
 from urllib import request
-
+from rest_framework.views import APIView
 from drivers.models import DriverProfile
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Load, LoadStatusHistory
-from .serializers import LoadSerializer, LoadStatusHistorySerializer
+from .serializers import LoadSerializer, LoadStatusHistorySerializer, MatchLoadsSerializer,DriverLoadHistorySerializer
 from accounts.permissions import IsCustomer
 
 from rest_framework import generics, status
@@ -427,4 +427,59 @@ class LoadHistoryAPIView(generics.ListAPIView):
         ).filter(
             load_id=self.kwargs["pk"]
         ).order_by("changed_at")
+        
+class MatchLoadsAPIView(APIView):
+
+    permission_classes = [IsAuthenticated, IsDriver]
+
+    def post(self, request):
+
+        serializer = MatchLoadsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        current_location = serializer.validated_data["current_location"]
+        return_destination = serializer.validated_data["return_destination"]
+
+        try:
+            driver_profile = request.user.driver_profile
+        except DriverProfile.DoesNotExist:
+            return Response(
+                {"detail": "Please complete your driver profile first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        matching_loads = Load.objects.filter(
+            status=Load.Status.AVAILABLE,
+            vehicle_type=driver_profile.vehicle_type,
+            pickup_location__icontains=current_location,
+            delivery_location__icontains=return_destination
+        ).order_by("-price", "-created_at")
+
+        response_serializer = LoadSerializer(
+            matching_loads,
+            many=True
+        )
+
+        return Response({
+            "count": matching_loads.count(),
+            "current_location": current_location,
+            "return_destination": return_destination,
+            "results": response_serializer.data
+        })
+        
+class DriverLoadHistoryAPIView(generics.ListAPIView):
+
+    serializer_class = DriverLoadHistorySerializer
+
+    permission_classes = [IsAuthenticated, IsDriver]
+
+    def get_queryset(self):
+
+        return LoadStatusHistory.objects.filter(
+            load__assigned_driver=self.request.user,
+            load__status=Load.Status.DELIVERED
+        ).select_related(
+            "load",
+            "changed_by"
+        ).order_by("-changed_at")
         

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import AcceptLoadAPIView, CancelLoadAPIView, CreateLoadAPIView, AvailableLoadsAPIView, DeliverLoadAPIView, LoadDetailAPIView, LoadHistoryAPIView, MyLoadsAPIView, MyAcceptedLoadsAPIView, StartLoadAPIView
+from .views import AcceptLoadAPIView, CancelLoadAPIView, CreateLoadAPIView, AvailableLoadsAPIView, DeliverLoadAPIView, DriverLoadHistoryAPIView, LoadDetailAPIView, LoadHistoryAPIView, MatchLoadsAPIView, MyLoadsAPIView, MyAcceptedLoadsAPIView, StartLoadAPIView
 
 
 urlpatterns = [
@@ -61,5 +61,11 @@ urlpatterns = [
         "<int:pk>/history/",
         LoadHistoryAPIView.as_view(),
         name="load-history",
+    ),
+    path("match/", MatchLoadsAPIView.as_view(), name="match-loads"),
+    path(
+        "driver-history/",
+        DriverLoadHistoryAPIView.as_view(),
+        name="driver-load-history"
     ),
 ]
