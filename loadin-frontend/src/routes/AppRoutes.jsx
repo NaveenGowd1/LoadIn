@@ -8,10 +8,16 @@ import DriverLogin from "../pages/auth/DriverLogin";
 
 import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import DriverDashboard from "../pages/driver/DriverDashboard";
-import { RollerCoaster } from "lucide-react";
 import RoleSelection from "../pages/auth/RoleSelection";
 import ProtectedRoute from "./ProtectedRoute";
 import CreateLoad from "../pages/customer/CreateLoad";
+
+import { Navigate } from "react-router-dom";
+
+import DriverLayout from "../components/layout/DriverLayout";
+import DriverMyLoads from "../pages/driver/MyLoads";
+import DriverHistory from "../pages/driver/History";
+import DriverProfile from "../pages/driver/Profile";
 
 
 function AppRoutes() {
@@ -54,10 +60,36 @@ function AppRoutes() {
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRole="DRIVER" />}>
-                    <Route
-                        path="/driver/dashboard"
-                        element={<DriverDashboard />}
-                    />
+
+                    <Route path="/driver" element={<DriverLayout />}>
+
+                        <Route
+                            index
+                            element={<Navigate to="dashboard" replace />}
+                        />
+
+                        <Route
+                            path="dashboard"
+                            element={<DriverMyLoads />}
+                        />
+
+                        <Route
+                            path="history"
+                            element={<DriverHistory />}
+                        />
+
+                        <Route
+                            path="profile"
+                            element={<DriverProfile />}
+                        />
+
+                        <Route
+                            path="overview"
+                            element={<DriverDashboard />}
+                        />
+
+                    </Route>
+
                 </Route>
 
             </Routes>
