@@ -161,6 +161,7 @@ class DriverDashboardAPIView(generics.GenericAPIView):
                     },
 
                     "next_step": "COMPLETE_PROFILE",
+                    "shipment_summary": self.get_shipment_summary(request.user),
                 },
                 status=status.HTTP_200_OK
             )

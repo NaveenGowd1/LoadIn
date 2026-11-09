@@ -211,12 +211,14 @@ class MyAcceptedLoadsAPIView(generics.ListAPIView):
     ]
     
     def get_queryset(self):
-        
-        return (
-            Load.objects
-            .filter(assigned_driver=self.request.user)
-            .order_by("-created_at")
-        )
+
+        return Load.objects.filter(
+            assigned_driver=self.request.user,
+            status__in=[
+                Load.Status.ASSIGNED,
+                Load.Status.IN_TRANSIT
+            ]
+        ).order_by("-created_at")
         
 class LoadDetailAPIView(generics.RetrieveAPIView):
 
