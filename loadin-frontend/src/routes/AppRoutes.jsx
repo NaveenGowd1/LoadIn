@@ -71,7 +71,7 @@ function AppRoutes() {
                         />
 
                         <Route
-                            path="dashboard"
+                            path="my-loads"
                             element={<DriverMyLoads />}
                         />
 
@@ -86,7 +86,7 @@ function AppRoutes() {
                         />
 
                         <Route
-                            path="overview"
+                            path="dashboard"
                             element={<DriverDashboard />}
                         />
 

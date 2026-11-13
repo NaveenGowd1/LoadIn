@@ -11,7 +11,7 @@ import {
 const navigation = [
     {
         name: "My Loads",
-        path: "/driver/dashboard",
+        path: "/driver/my-loads",
         icon: Truck,
     },
     {
@@ -26,7 +26,7 @@ const navigation = [
     },
     {
         name: "Dashboard",
-        path: "/driver/overview",
+        path: "/driver/dashboard",
         icon: LayoutDashboard,
     },
 ];
@@ -78,7 +78,7 @@ export default function DriverLayout() {
                                 <NavLink
                                     key={item.name}
                                     to={item.path}
-                                    end={item.path === "/driver/dashboard"}
+                                    end={item.path === "/driver/my-loads"}
                                     className={({ isActive }) =>
                                         `flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                                             isActive

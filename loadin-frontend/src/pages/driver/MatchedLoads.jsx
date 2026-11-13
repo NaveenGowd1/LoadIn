@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -7,15 +7,43 @@ import {
     Truck,
     Weight,
     IndianRupee,
+    AlertCircle,
 } from "lucide-react";
+import { acceptLoad } from "../../services/loadService";
 
 export default function MatchedLoads() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const matches = location.state?.matches || [];
+    const [matches, setMatches] = useState(location.state?.matches || []);
+    const [acceptingId, setAcceptingId] = useState(null);
+    const [errorMsg, setErrorMsg] = useState("");
+
     const currentLocation = location.state?.currentLocation || "";
     const returnDestination = location.state?.returnDestination || "";
+
+    const handleAcceptShipment = async (loadId) => {
+        try {
+            setErrorMsg("");
+            setAcceptingId(loadId);
+
+            await acceptLoad(loadId);
+
+            // Remove from local list in case the user hits browser Back
+            setMatches((prev) => prev.filter((load) => load.id !== loadId));
+
+            // Redirect to DriverMyLoads, which automatically calls getMyAcceptedLoads()
+            navigate("/driver/my-loads");
+        } catch (err) {
+            console.error("Failed to accept shipment:", err);
+            setErrorMsg(
+                err.response?.data?.detail ||
+                "Unable to accept this shipment. Please try again."
+            );
+        } finally {
+            setAcceptingId(null);
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -46,6 +74,13 @@ export default function MatchedLoads() {
                     Sorted by highest price first.
                 </p>
             </div>
+
+            {errorMsg && (
+                <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    <AlertCircle size={18} className="shrink-0 text-red-500" />
+                    <span>{errorMsg}</span>
+                </div>
+            )}
 
             {matches.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white py-16 text-center">
@@ -134,12 +169,13 @@ export default function MatchedLoads() {
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        // We'll connect acceptance next.
-                                    }}
-                                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+                                    onClick={() => handleAcceptShipment(load.id)}
+                                    disabled={acceptingId !== null}
+                                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    Accept Shipment
+                                    {acceptingId === load.id
+                                        ? "Accepting..."
+                                        : "Accept Shipment"}
                                 </button>
                             </div>
                         </article>

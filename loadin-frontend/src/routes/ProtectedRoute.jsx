@@ -25,11 +25,11 @@ export default function ProtectedRoute({ allowedRole }) {
     // Verify that the logged-in user's role is allowed
     if (user.role !== allowedRole) {
         if (user.role === "CUSTOMER") {
-            return <Navigate to="/customer/dashboard" replace />;
+            return <Navigate to="/customer/my-loads" replace />;
         }
 
         if (user.role === "DRIVER") {
-            return <Navigate to="/driver/dashboard" replace />;
+            return <Navigate to="/driver/my-loads" replace />;
         }
 
         localStorage.removeItem("access");
