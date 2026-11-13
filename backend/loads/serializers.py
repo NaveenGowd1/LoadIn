@@ -137,36 +137,24 @@ class MatchLoadsSerializer(serializers.Serializer):
     )
     
 class DriverLoadHistorySerializer(serializers.ModelSerializer):
-
-    load_id = serializers.IntegerField(
-        source="load.id",
+    status_history = LoadStatusHistorySerializer(
+        many=True,
         read_only=True
-    )
-
-    pickup_location = serializers.CharField(
-        source="load.pickup_location",
-        read_only=True
-    )
-
-    delivery_location = serializers.CharField(
-        source="load.delivery_location",
-        read_only=True
-    )
-
-    changed_by_email = serializers.EmailField(
-        source="changed_by.email",
-        read_only=True,
-        allow_null=True
     )
 
     class Meta:
-        model = LoadStatusHistory
+        model = Load
         fields = [
             "id",
-            "load_id",
             "pickup_location",
             "delivery_location",
+            "goods_description",
+            "weight",
+            "vehicle_type",
+            "pickup_date",
+            "delivery_date",
+            "price",
             "status",
-            "changed_by_email",
-            "changed_at",
+            "updated_at",
+            "status_history",
         ]

@@ -476,12 +476,12 @@ class DriverLoadHistoryAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsDriver]
 
     def get_queryset(self):
-
-        return LoadStatusHistory.objects.filter(
-            load__assigned_driver=self.request.user,
-            load__status=Load.Status.DELIVERED
-        ).select_related(
-            "load",
-            "changed_by"
-        ).order_by("-changed_at")
+        return (
+            Load.objects.filter(
+                assigned_driver=self.request.user,
+                status=Load.Status.DELIVERED,
+            )
+            .prefetch_related("status_history__changed_by")
+            .order_by("-updated_at")
+        )
         
