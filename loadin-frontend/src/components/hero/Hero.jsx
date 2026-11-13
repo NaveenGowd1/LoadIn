@@ -9,7 +9,7 @@ import {
 
 import Button from "../ui/Button";
 
-import heroIllustration from "./HeroIllustration.png";
+import heroIllustration from "./Heroillustration.png";
 
 export default function Hero() {
   return (
