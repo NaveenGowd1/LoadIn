@@ -18,6 +18,8 @@ import DriverLayout from "../components/layout/DriverLayout";
 import DriverMyLoads from "../pages/driver/MyLoads";
 import DriverHistory from "../pages/driver/History";
 import DriverProfile from "../pages/driver/Profile";
+import MatchLoadsPanel from "../pages/driver/MatchLoadsPanel";
+import MatchedLoads from "../pages/driver/MatchedLoads";
 
 
 function AppRoutes() {
@@ -86,6 +88,16 @@ function AppRoutes() {
                         <Route
                             path="overview"
                             element={<DriverDashboard />}
+                        />
+
+                        <Route
+                            path="match-loads"
+                            element={<MatchLoadsPanel />}
+                        />
+
+                        <Route
+                            path="matched-loads"
+                            element={<MatchedLoads />}
                         />
 
                     </Route>
