@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     AdminDashboardAPIView,
     CustomerDashboardAPIView,
+    CustomerProfileAPIView,
     CustomerRegisterAPIView,
     DriverRegisterAPIView,
     DriverDashboardAPIView,
@@ -41,5 +42,10 @@ urlpatterns = [
     path(
         "admin/dashboard/",
         AdminDashboardAPIView.as_view(),
+    ),
+    path(
+        "customer/profile/",
+        CustomerProfileAPIView.as_view(),
+        name="customer-profile",
     ),
 ]

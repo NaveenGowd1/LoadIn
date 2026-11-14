@@ -54,6 +54,24 @@ class DriverRegisterSerializer(BaseRegisterSerializer):
         )
         
     from django.contrib.auth import authenticate
+    
+from rest_framework import serializers
+from .models import CustomUser
+
+
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "role",
+            "date_joined",
+        ]
+        read_only_fields = ["id", "email", "role", "date_joined"]
 
 
 # class LoginSerializer(serializers.Serializer):

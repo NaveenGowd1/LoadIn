@@ -64,3 +64,19 @@ class AdminDashboardAPIView(APIView):
                 "message": "Welcome Admin!"
             }
         )
+        
+
+from rest_framework.permissions import IsAuthenticated
+from .serializers import (
+    CustomerRegisterSerializer,
+    DriverRegisterSerializer,
+    CustomerProfileSerializer,
+)
+
+
+class CustomerProfileAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = CustomerProfileSerializer
+    permission_classes = [IsAuthenticated, IsCustomer]
+
+    def get_object(self):
+        return self.request.user
