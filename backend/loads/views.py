@@ -185,18 +185,20 @@ class AcceptLoadAPIView(generics.GenericAPIView):
         )
         
 class MyLoadsAPIView(generics.ListAPIView):
-
     serializer_class = LoadSerializer
-
     permission_classes = [
         IsAuthenticated,
         IsCustomer,
     ]
 
     def get_queryset(self):
-
         return (
             Load.objects
+            .select_related(
+                "customer",
+                "assigned_driver",
+                "assigned_driver__driver_profile",
+            )
             .filter(customer=self.request.user)
             .order_by("-created_at")
         )
