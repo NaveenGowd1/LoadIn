@@ -6,11 +6,10 @@ import CustomerLogin from "../pages/auth/CustomerLogin";
 import DriverRegister from "../pages/auth/DriverRegister";
 import DriverLogin from "../pages/auth/DriverLogin";
 
-import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import DriverDashboard from "../pages/driver/DriverDashboard";
 import RoleSelection from "../pages/auth/RoleSelection";
 import ProtectedRoute from "./ProtectedRoute";
-import CreateLoad from "../pages/customer/CreateLoad";
+
 
 import { Navigate } from "react-router-dom";
 
@@ -20,6 +19,13 @@ import DriverHistory from "../pages/driver/History";
 import DriverProfile from "../pages/driver/Profile";
 import MatchLoadsPanel from "../pages/driver/MatchLoadsPanel";
 import MatchedLoads from "../pages/driver/MatchedLoads";
+
+import CustomerLayout from "../components/layout/CustomerLayout";
+import CustomerDashboard from "../pages/customer/CustomerDashboard";
+import CustomerActiveLoads from "../pages/customer/ActiveLoads";
+import CustomerHistory from "../pages/customer/History";
+import CustomerProfile from "../pages/customer/Profile";
+import CreateLoad from "../pages/customer/CreateLoad";
 
 
 function AppRoutes() {
@@ -54,11 +60,14 @@ function AppRoutes() {
                 />
 
                 <Route element={<ProtectedRoute allowedRole="CUSTOMER" />}>
-                    <Route
-                        path="/customer/dashboard"
-                        element={<CustomerDashboard />}
-                    />
-                    <Route path="/customer/create-load" element={<CreateLoad />} />
+                    <Route path="/customer" element={<CustomerLayout />}>
+                        <Route index element={<Navigate to="dashboard" replace />} />
+                        <Route path="active-loads" element={<CustomerActiveLoads />} />
+                        <Route path="history" element={<CustomerHistory />} />
+                        <Route path="profile" element={<CustomerProfile />} />
+                        <Route path="dashboard" element={<CustomerDashboard />} />
+                        <Route path="create-load" element={<CreateLoad />} />
+                    </Route>
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRole="DRIVER" />}>
