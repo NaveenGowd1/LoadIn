@@ -204,40 +204,52 @@ class MyLoadsAPIView(generics.ListAPIView):
         )
         
 class MyAcceptedLoadsAPIView(generics.ListAPIView):
-    
     serializer_class = LoadSerializer
-    
     permission_classes = [
         IsAuthenticated,
         IsDriver,
     ]
-    
-    def get_queryset(self):
 
-        return Load.objects.filter(
-            assigned_driver=self.request.user,
-            status__in=[
-                Load.Status.ASSIGNED,
-                Load.Status.IN_TRANSIT
-            ]
-        ).order_by("-created_at")
+    def get_queryset(self):
+        return (
+            Load.objects
+            .select_related(
+                "customer",
+                "assigned_driver",
+                "assigned_driver__driver_profile",
+            )
+            .filter(
+                assigned_driver=self.request.user,
+                status__in=[
+                    Load.Status.ASSIGNED,
+                    Load.Status.IN_TRANSIT,
+                ],
+            )
+            .order_by("-created_at")
+        )
         
 class LoadDetailAPIView(generics.RetrieveAPIView):
-
     serializer_class = LoadSerializer
-
     permission_classes = [
         IsAuthenticated,
     ]
 
     def get_queryset(self):
-
         user = self.request.user
 
-        return Load.objects.filter(
-            models.Q(customer=user) |
-            models.Q(assigned_driver=user)
+        return (
+            Load.objects
+            .select_related(
+                "customer",
+                "assigned_driver",
+                "assigned_driver__driver_profile",
+            )
+            .filter(
+                models.Q(customer=user) |
+                models.Q(assigned_driver=user)
+            )
         )
+        
 class StartLoadAPIView(generics.GenericAPIView):
 
     permission_classes = [
@@ -472,14 +484,21 @@ class MatchLoadsAPIView(APIView):
         })
         
 class DriverLoadHistoryAPIView(generics.ListAPIView):
-
     serializer_class = DriverLoadHistorySerializer
-
-    permission_classes = [IsAuthenticated, IsDriver]
+    permission_classes = [
+        IsAuthenticated,
+        IsDriver,
+    ]
 
     def get_queryset(self):
         return (
-            Load.objects.filter(
+            Load.objects
+            .select_related(
+                "customer",
+                "assigned_driver",
+                "assigned_driver__driver_profile",
+            )
+            .filter(
                 assigned_driver=self.request.user,
                 status=Load.Status.DELIVERED,
             )
