@@ -10,6 +10,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { acceptLoad } from "../../services/loadService";
+import RoutePreviewMap from "../../components/maps/RoutePreviewMap";
 
 export default function MatchedLoads() {
     const navigate = useNavigate();
@@ -38,7 +39,7 @@ export default function MatchedLoads() {
             console.error("Failed to accept shipment:", err);
             setErrorMsg(
                 err.response?.data?.detail ||
-                "Unable to accept this shipment. Please try again."
+                    "Unable to accept this shipment. Please try again."
             );
         } finally {
             setAcceptingId(null);
@@ -47,7 +48,6 @@ export default function MatchedLoads() {
 
     return (
         <div className="space-y-8">
-
             <button
                 onClick={() => navigate("/driver/match-loads")}
                 className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600"
@@ -140,6 +140,11 @@ export default function MatchedLoads() {
                                 </div>
                             </div>
 
+                            {/* Visual Route Preview & 1-Tap Google Maps */}
+                            <div className="mb-5">
+                                <RoutePreviewMap load={load} heightClass="h-52" />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                                 <div className="flex gap-2">
                                     <Truck size={18} />
@@ -182,7 +187,6 @@ export default function MatchedLoads() {
                     ))}
                 </div>
             )}
-
         </div>
     );
 }

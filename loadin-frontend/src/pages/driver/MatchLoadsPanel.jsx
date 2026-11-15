@@ -3,15 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
     Search,
     ArrowLeft,
-    PackageSearch,
     AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { matchLoads } from "../../services/loadService";
 import LocationPickerField from "../../components/maps/LocationPickerField";
-// Keep your existing MatchedLoadCard import or component definition below if it is in this file
-// import MatchedLoadCard from "./MatchedLoadCard";
 
 export default function MatchLoadsPanel({ onBack }) {
     const navigate = useNavigate();
@@ -26,8 +23,6 @@ export default function MatchLoadsPanel({ onBack }) {
         radius_km: 30,
     });
 
-    const [matches, setMatches] = useState([]);
-    const [hasSearched, setHasSearched] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -56,8 +51,14 @@ export default function MatchLoadsPanel({ onBack }) {
             });
 
             const results = Array.isArray(data) ? data : data.results || [];
-            setMatches(results);
-            setHasSearched(true);
+
+            navigate("/driver/matched-loads", {
+                state: {
+                    matches: results,
+                    currentLocation: routeData.current_location,
+                    returnDestination: routeData.return_destination,
+                },
+            });
         } catch (err) {
             const message =
                 err.response?.data?.detail || "Unable to search matching loads.";
@@ -192,49 +193,6 @@ export default function MatchLoadsPanel({ onBack }) {
                     <AlertCircle size={19} className="mt-0.5 shrink-0" />
                     {error}
                 </div>
-            )}
-
-            {/* Search Results */}
-            {hasSearched && !error && (
-                <section className="space-y-5">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900">
-                            Matching Shipments
-                        </h2>
-
-                        <p className="mt-1 text-sm text-slate-500">
-                            {matches.length} matching{" "}
-                            {matches.length === 1 ? "shipment" : "shipments"} found.
-                            Results are sorted by highest price first.
-                        </p>
-                    </div>
-
-                    {matches.length > 0 ? (
-                        <div className="grid gap-5">
-                            {matches.map((load) => (
-                                <MatchedLoadCard
-                                    key={load.id}
-                                    load={load}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center">
-                            <PackageSearch
-                                size={36}
-                                className="mx-auto text-slate-400"
-                            />
-
-                            <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                                No matching shipments found
-                            </h3>
-
-                            <p className="mt-2 text-sm text-slate-500">
-                                Try expanding the match radius or adjusting your pinned locations.
-                            </p>
-                        </div>
-                    )}
-                </section>
             )}
         </div>
     );

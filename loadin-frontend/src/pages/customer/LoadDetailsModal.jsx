@@ -1,4 +1,5 @@
 import { Package, Clock, UserRound, X } from "lucide-react";
+import RoutePreviewMap from "../../components/maps/RoutePreviewMap";
 
 const formatStatus = (status) =>
     status
@@ -55,6 +56,14 @@ export default function LoadDetailsModal({
                     </button>
                 </div>
 
+                {/* Route Map Preview */}
+                {typeof load.pickup_latitude === "number" &&
+                    typeof load.delivery_latitude === "number" && (
+                        <section className="mb-6">
+                            <RoutePreviewMap load={load} heightClass="h-56" />
+                        </section>
+                    )}
+
                 {/* Load Information */}
                 <section className="mb-6">
                     <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
@@ -62,7 +71,7 @@ export default function LoadDetailsModal({
                         Load Information
                     </h3>
 
-                    <div className="grid grid-cols-1 gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
+                    <div className="grid goods_descriptiongrid-cols-1 gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
                         <Detail label="Pickup Location" value={load.pickup_location} />
                         <Detail label="Delivery Location" value={load.delivery_location} />
                         <Detail label="Goods Description" value={load.goods_description} />

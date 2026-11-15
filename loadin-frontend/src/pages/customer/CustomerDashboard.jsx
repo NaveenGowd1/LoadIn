@@ -392,7 +392,7 @@ function CustomerDashboard() {
                                                 Shipment #{load.id}
                                             </p>
                                             <h4 className="mt-1 text-lg font-semibold text-slate-900">
-                                                {load.pickup_location}
+                                                {load.goods_description || "Item name not provided"}
                                             </h4>
                                         </div>
 

@@ -13,6 +13,8 @@ import {
     CheckCircle2,
 } from "lucide-react";
 
+import RoutePreviewMap from "../../components/maps/RoutePreviewMap";
+
 import MatchLoadsPanel from "./MatchLoadsPanel";
 import { useNavigate } from "react-router-dom";
 import {
@@ -112,6 +114,10 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
                     </div>
                 </div>
 
+            </div>
+
+            <div className="mt-5">
+                <RoutePreviewMap load={load} heightClass="h-52" />
             </div>
 
             <div className="my-5 border-t border-slate-100" />
