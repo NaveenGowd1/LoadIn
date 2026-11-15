@@ -107,7 +107,7 @@ export default function RoutePreviewMap({ load, heightClass = "h-56" }) {
             </div>
 
             {/* Interactive Preview Map */}
-            <div className={`${heightClass} w-full`}>
+            <div className={`relative z-0 ${heightClass} w-full`}>
                 <MapContainer
                     center={pickup}
                     zoom={12}

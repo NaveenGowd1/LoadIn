@@ -1,4 +1,4 @@
-import { Package, Clock, UserRound, X } from "lucide-react";
+import { Package, Clock, UserRound, X, KeyRound } from "lucide-react";
 import RoutePreviewMap from "../../components/maps/RoutePreviewMap";
 
 const formatStatus = (status) =>
@@ -55,8 +55,43 @@ export default function LoadDetailsModal({
                         <X size={22} />
                     </button>
                 </div>
+                {/* Shipment Verification OTPs (Customer Only) */}
+                {["AVAILABLE", "ASSIGNED", "IN_TRANSIT"].includes(load.status) &&
+                    (load.pickup_otp || load.delivery_otp) && (
+                        <section className="mb-6 rounded-xl border border-blue-200 bg-blue-50/70 p-4">
+                            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-900">
+                                <KeyRound size={17} className="text-blue-600" />
+                                Driver Verification Codes
+                            </div>
 
-                {/* Route Map Preview */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {load.pickup_otp && (
+                                    <div className="rounded-lg border border-blue-100 bg-white px-3.5 py-2.5">
+                                        <p className="text-xs text-slate-500">Pickup OTP</p>
+                                        <p className="mt-0.5 font-mono text-xl font-bold tracking-widest text-slate-900">
+                                            {load.pickup_otp}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] text-slate-400">
+                                            Share at pickup
+                                        </p>
+                                    </div>
+                                )}
+
+                                {load.delivery_otp && (
+                                    <div className="rounded-lg border border-blue-100 bg-white px-3.5 py-2.5">
+                                        <p className="text-xs text-slate-500">Delivery OTP</p>
+                                        <p className="mt-0.5 font-mono text-xl font-bold tracking-widest text-slate-900">
+                                            {load.delivery_otp}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] text-slate-400">
+                                            Share on delivery
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
+                                {/* Route Map Preview */}
                 {typeof load.pickup_latitude === "number" &&
                     typeof load.delivery_latitude === "number" && (
                         <section className="mb-6">

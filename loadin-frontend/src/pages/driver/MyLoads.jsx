@@ -11,10 +11,12 @@ import {
     AlertCircle,
     Play,
     CheckCircle2,
+    KeyRound,
+    X,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import RoutePreviewMap from "../../components/maps/RoutePreviewMap";
-
 import MatchLoadsPanel from "./MatchLoadsPanel";
 import { useNavigate } from "react-router-dom";
 import {
@@ -64,7 +66,6 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
 
     return (
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6">
-
             {/* Card Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -83,7 +84,6 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
 
             {/* Route */}
             <div className="grid gap-5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-
                 <div className="flex gap-3">
                     <div className="mt-1 text-emerald-600">
                         <MapPin size={20} />
@@ -113,7 +113,6 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
                         </p>
                     </div>
                 </div>
-
             </div>
 
             <div className="mt-5">
@@ -124,7 +123,6 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
 
             {/* Shipment Details */}
             <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-
                 <div className="flex items-start gap-2">
                     <Truck size={18} className="mt-0.5 text-slate-400" />
                     <div>
@@ -164,14 +162,12 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
                         </p>
                     </div>
                 </div>
-
             </div>
 
             <div className="my-5 border-t border-slate-100" />
 
             {/* Footer */}
             <div className="flex flex-wrap items-end justify-between gap-4">
-
                 <div>
                     <p className="text-xs text-slate-400">Goods Description</p>
                     <p className="mt-1 text-sm text-slate-700">
@@ -210,10 +206,136 @@ function LoadCard({ load, actionLoadingId, onStartTrip, onDeliverLoad }) {
                         </button>
                     )}
                 </div>
-
             </div>
-
         </article>
+    );
+}
+
+function OtpVerificationModal({
+    prompt,
+    otp,
+    setOtp,
+    submitting,
+    error,
+    onClose,
+    onSubmit,
+}) {
+    if (!prompt) return null;
+
+    const isStart = prompt.type === "START";
+
+    return (
+        <div
+            className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/50 p-4"
+            onClick={onClose}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                                isStart
+                                    ? "bg-blue-50 text-blue-600"
+                                    : "bg-emerald-50 text-emerald-600"
+                            }`}
+                        >
+                            <KeyRound size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">
+                                {isStart
+                                    ? "Verify Pickup OTP"
+                                    : "Verify Delivery OTP"}
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                                Shipment #{prompt.loadId}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    >
+                        <X size={19} />
+                    </button>
+                </div>
+
+                <p className="mt-4 text-sm text-slate-600">
+                    {isStart
+                        ? "Enter the 4-digit Pickup OTP provided by the sender before starting transit."
+                        : "Enter the 4-digit Delivery OTP provided by the receiver to complete delivery."}
+                </p>
+
+                <form onSubmit={onSubmit} className="mt-5 space-y-4">
+                    <div>
+                        <label
+                            htmlFor="shipment-otp"
+                            className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                        >
+                            4-Digit Security Code
+                        </label>
+                        <input
+                            id="shipment-otp"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="\d{4}"
+                            maxLength={4}
+                            autoFocus
+                            required
+                            value={otp}
+                            onChange={(e) =>
+                                setOtp(
+                                    e.target.value.replace(/\D/g, "").slice(0, 4)
+                                )
+                            }
+                            placeholder="••••"
+                            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.5em] text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                            <AlertCircle size={15} className="shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={submitting}
+                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting || otp.length !== 4}
+                            className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                isStart
+                                    ? "bg-blue-600 hover:bg-blue-700"
+                                    : "bg-emerald-600 hover:bg-emerald-700"
+                            }`}
+                        >
+                            {submitting
+                                ? "Verifying..."
+                                : isStart
+                                  ? "Confirm & Start Trip"
+                                  : "Confirm Delivery"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }
 
@@ -224,6 +346,12 @@ export default function DriverMyLoads() {
     const [actionError, setActionError] = useState("");
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [showMatchPanel, setShowMatchPanel] = useState(false);
+
+    // OTP Modal State
+    const [otpPrompt, setOtpPrompt] = useState(null); // { type: "START" | "DELIVER", loadId }
+    const [otpValue, setOtpValue] = useState("");
+    const [otpError, setOtpError] = useState("");
+
     const navigate = useNavigate();
 
     const fetchLoads = useCallback(async () => {
@@ -237,15 +365,15 @@ export default function DriverMyLoads() {
                 Array.isArray(data)
                     ? data
                     : Array.isArray(data.results)
-                        ? data.results
-                        : []
+                      ? data.results
+                      : []
             );
         } catch (err) {
             console.error("Failed to fetch driver loads:", err);
 
             setError(
                 err.response?.data?.detail ||
-                "Unable to load your shipments. Please try again."
+                    "Unable to load your shipments. Please try again."
             );
         } finally {
             setLoading(false);
@@ -256,47 +384,49 @@ export default function DriverMyLoads() {
         fetchLoads();
     }, [fetchLoads]);
 
-    const handleStartTrip = async (loadId) => {
-        try {
-            setActionError("");
-            setActionLoadingId(loadId);
-
-            await startLoad(loadId);
-
-            // Update status locally from ASSIGNED -> IN_TRANSIT
-            setLoads((prev) =>
-                prev.map((load) =>
-                    load.id === loadId
-                        ? { ...load, status: "IN_TRANSIT" }
-                        : load
-                )
-            );
-        } catch (err) {
-            console.error("Failed to start trip:", err);
-            setActionError(
-                err.response?.data?.detail ||
-                "Unable to start the trip. Please try again."
-            );
-        } finally {
-            setActionLoadingId(null);
-        }
+    const openOtpPrompt = (type, loadId) => {
+        setOtpPrompt({ type, loadId });
+        setOtpValue("");
+        setOtpError("");
     };
 
-    const handleDeliverLoad = async (loadId) => {
+    const handleVerifyOtpSubmit = async (event) => {
+        event.preventDefault();
+        if (!otpPrompt) return;
+
+        const { type, loadId } = otpPrompt;
+
         try {
+            setOtpError("");
             setActionError("");
             setActionLoadingId(loadId);
 
-            await deliverLoad(loadId);
+            if (type === "START") {
+                await startLoad(loadId, otpValue);
 
-            // Remove from active shipments list once delivered
-            setLoads((prev) => prev.filter((load) => load.id !== loadId));
+                setLoads((prev) =>
+                    prev.map((load) =>
+                        load.id === loadId
+                            ? { ...load, status: "IN_TRANSIT" }
+                            : load
+                    )
+                );
+                toast.success("Pickup verified! Trip started.");
+            } else {
+                await deliverLoad(loadId, otpValue);
+
+                setLoads((prev) => prev.filter((load) => load.id !== loadId));
+                toast.success("Delivery verified! Shipment completed.");
+            }
+
+            setOtpPrompt(null);
+            setOtpValue("");
         } catch (err) {
-            console.error("Failed to mark load delivered:", err);
-            setActionError(
+            console.error("OTP verification failed:", err);
+            const detail =
                 err.response?.data?.detail ||
-                "Unable to complete delivery. Please try again."
-            );
+                "Invalid OTP. Please check the code and try again.";
+            setOtpError(detail);
         } finally {
             setActionLoadingId(null);
         }
@@ -305,15 +435,11 @@ export default function DriverMyLoads() {
     return (
         <div className="space-y-8">
             {showMatchPanel ? (
-                <MatchLoadsPanel
-                    onBack={() => setShowMatchPanel(false)}
-                />
+                <MatchLoadsPanel onBack={() => setShowMatchPanel(false)} />
             ) : (
                 <>
-
                     {/* Page Heading */}
                     <div className="flex flex-wrap items-end justify-between gap-4">
-
                         <div>
                             <p className="text-sm font-medium text-blue-600">
                                 DRIVER WORKSPACE
@@ -337,7 +463,6 @@ export default function DriverMyLoads() {
                                 Refresh
                             </button>
                         )}
-
                     </div>
 
                     {/* Action Error Banner */}
@@ -362,7 +487,6 @@ export default function DriverMyLoads() {
                     {/* Error State */}
                     {!loading && error && (
                         <div className="rounded-2xl border border-red-200 bg-white px-6 py-12 text-center">
-
                             <AlertCircle
                                 size={36}
                                 className="mx-auto text-red-500"
@@ -382,14 +506,12 @@ export default function DriverMyLoads() {
                             >
                                 Try Again
                             </button>
-
                         </div>
                     )}
 
                     {/* Empty State */}
                     {!loading && !error && loads.length === 0 && (
                         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-
                             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                                 <PackageSearch size={32} />
                             </div>
@@ -410,21 +532,20 @@ export default function DriverMyLoads() {
                                 Match Loads
                                 <ArrowRight size={17} />
                             </button>
-
                         </div>
                     )}
 
                     {/* Active Loads */}
                     {!loading && !error && loads.length > 0 && (
                         <div className="space-y-5">
-
                             <div className="flex items-center justify-between">
                                 <h2 className="text-lg font-semibold text-slate-800">
                                     Active Shipments
                                 </h2>
 
                                 <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                                    {loads.length} {loads.length === 1 ? "Shipment" : "Shipments"}
+                                    {loads.length}{" "}
+                                    {loads.length === 1 ? "Shipment" : "Shipments"}
                                 </span>
                             </div>
 
@@ -434,16 +555,29 @@ export default function DriverMyLoads() {
                                         key={load.id}
                                         load={load}
                                         actionLoadingId={actionLoadingId}
-                                        onStartTrip={handleStartTrip}
-                                        onDeliverLoad={handleDeliverLoad}
+                                        onStartTrip={(id) =>
+                                            openOtpPrompt("START", id)
+                                        }
+                                        onDeliverLoad={(id) =>
+                                            openOtpPrompt("DELIVER", id)
+                                        }
                                     />
                                 ))}
                             </div>
-
                         </div>
                     )}
                 </>
             )}
+
+            <OtpVerificationModal
+                prompt={otpPrompt}
+                otp={otpValue}
+                setOtp={setOtpValue}
+                submitting={actionLoadingId !== null}
+                error={otpError}
+                onClose={() => !actionLoadingId && setOtpPrompt(null)}
+                onSubmit={handleVerifyOtpSubmit}
+            />
         </div>
     );
 }

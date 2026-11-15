@@ -246,6 +246,29 @@ export default function CustomerActiveLoads() {
                                 </p>
                             )}
 
+                            {/* Inline Verification OTPs */}
+                            {(load.pickup_otp || load.delivery_otp) && (
+                                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs">
+                                    {load.status !== "IN_TRANSIT" && load.pickup_otp && (
+                                        <span className="text-slate-600">
+                                            Pickup OTP:{" "}
+                                            <strong className="font-mono text-sm tracking-wider text-slate-900">
+                                                {load.pickup_otp}
+                                            </strong>
+                                        </span>
+                                    )}
+                                    {load.delivery_otp && (
+                                        <span className="text-slate-600">
+                                            Delivery OTP:{" "}
+                                            <strong className="font-mono text-sm tracking-wider text-slate-900">
+                                                {load.delivery_otp}
+                                            </strong>
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
                             <div className="mt-5 flex gap-3">
                                 <button
                                     type="button"

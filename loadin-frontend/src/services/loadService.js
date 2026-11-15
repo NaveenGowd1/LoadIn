@@ -16,16 +16,15 @@ export const acceptLoad = async (loadId) => {
     return response.data;
 };
 
-export const startLoad = async (loadId) => {
-    const response = await api.post(`/loads/${loadId}/start/`);
+export const startLoad = async (loadId, otp) => {
+    const response = await api.post(`/loads/${loadId}/start/`, { otp });
     return response.data;
 };
 
-export const deliverLoad = async (loadId) => {
-    const response = await api.post(`/loads/${loadId}/deliver/`);
+export const deliverLoad = async (loadId, otp) => {
+    const response = await api.post(`/loads/${loadId}/deliver/`, { otp });
     return response.data;
 };
-
 export const getDriverLoadHistory = async () => {
     const response = await api.get("/loads/driver-history/");
     return response.data;
