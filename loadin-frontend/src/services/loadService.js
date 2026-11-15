@@ -25,7 +25,13 @@ export const deliverLoad = async (loadId, otp) => {
     const response = await api.post(`/loads/${loadId}/deliver/`, { otp });
     return response.data;
 };
+
 export const getDriverLoadHistory = async () => {
     const response = await api.get("/loads/driver-history/");
+    return response.data;
+};
+
+export const editLoad = async (loadId, payload) => {
+    const response = await api.patch(`/loads/${loadId}/edit/`, payload);
     return response.data;
 };

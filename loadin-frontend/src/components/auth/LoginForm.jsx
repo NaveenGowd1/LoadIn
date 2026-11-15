@@ -72,7 +72,7 @@ export default function LoginForm({
 
       } else {
 
-        navigate("/customer/dashboard");
+        navigate("/customer/active-loads");
 
       }
 

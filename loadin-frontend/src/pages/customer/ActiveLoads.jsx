@@ -7,6 +7,7 @@ import {
     Plus,
     RefreshCw,
     Phone,
+    Pencil,
     X,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -278,8 +279,17 @@ export default function CustomerActiveLoads() {
                                     <Package size={16} />
                                     Track & Details
                                 </button>
-
                                 {load.status === "AVAILABLE" && (
+                                <>
+                                    <Link
+                                        to={`/customer/loads/${load.id}/edit`}
+                                        state={{ load }}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                    >
+                                        <Pencil size={15} />
+                                        Edit
+                                    </Link>
+
                                     <button
                                         type="button"
                                         onClick={() => cancelLoad(load)}
@@ -288,7 +298,8 @@ export default function CustomerActiveLoads() {
                                         <X size={16} />
                                         Cancel
                                     </button>
-                                )}
+                                </>
+                            )}
                             </div>
                         </div>
                     ))}

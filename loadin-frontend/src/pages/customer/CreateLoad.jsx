@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { editLoad } from "../../services/loadService";
 import LocationPickerField from "../../components/maps/LocationPickerField";
 
 const initialForm = {
@@ -19,10 +20,63 @@ const initialForm = {
     price: "",
 };
 
+const mapLoadToForm = (load) => ({
+    pickup_location: load.pickup_location || "",
+    pickup_latitude: load.pickup_latitude ?? null,
+    pickup_longitude: load.pickup_longitude ?? null,
+    delivery_location: load.delivery_location || "",
+    delivery_latitude: load.delivery_latitude ?? null,
+    delivery_longitude: load.delivery_longitude ?? null,
+    goods_description: load.goods_description || "",
+    weight: load.weight ?? "",
+    vehicle_type: load.vehicle_type || "",
+    pickup_date: load.pickup_date || "",
+    delivery_date: load.delivery_date || "",
+    price: load.price ?? "",
+});
+
 export default function CreateLoad() {
-    const [formData, setFormData] = useState(initialForm);
-    const [loading, setLoading] = useState(false);
+    const { id } = useParams();
+    const location = useLocation();
     const navigate = useNavigate();
+
+    const isEditMode = Boolean(id);
+    const passedLoad = location.state?.load;
+
+    const [formData, setFormData] = useState(() =>
+        passedLoad ? mapLoadToForm(passedLoad) : initialForm
+    );
+    const [loading, setLoading] = useState(false);
+    const [fetchingLoad, setFetchingLoad] = useState(isEditMode && !passedLoad);
+
+    useEffect(() => {
+        if (!isEditMode || passedLoad) return;
+
+        const fetchExistingLoad = async () => {
+            setFetchingLoad(true);
+            try {
+                const response = await api.get(`/loads/${id}/`);
+                const load = response.data;
+
+                if (load.status !== "AVAILABLE") {
+                    toast.error("Only AVAILABLE shipments can be edited.");
+                    navigate("/customer/active-loads");
+                    return;
+                }
+
+                setFormData(mapLoadToForm(load));
+            } catch (err) {
+                toast.error(
+                    err.response?.data?.detail || "Unable to load shipment details."
+                );
+                navigate("/customer/active-loads");
+            } finally {
+                setFetchingLoad(false);
+            }
+        };
+
+        fetchExistingLoad();
+    }, [id, isEditMode, passedLoad, navigate]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -37,20 +91,32 @@ export default function CreateLoad() {
         event.preventDefault();
         setLoading(true);
 
-        try {
-            await api.post("/loads/create/", {
-                ...formData,
-                weight: Number(formData.weight),
-                price: Number(formData.price),
-            });
+        const payload = {
+            ...formData,
+            weight: Number(formData.weight),
+            price: Number(formData.price),
+        };
 
-            toast.success("Load created successfully!");
-            setFormData(initialForm);
-            navigate("/customer/dashboard");
+        try {
+            if (isEditMode) {
+                await editLoad(id, payload);
+                toast.success(`Shipment #${id} updated successfully!`);
+                navigate("/customer/active-loads");
+            } else {
+                await api.post("/loads/create/", payload);
+                toast.success("Load created successfully!");
+                setFormData(initialForm);
+                navigate("/customer/dashboard");
+            }
         } catch (error) {
             const data = error.response?.data;
 
-            if (data && typeof data === "object") {
+            if (data?.detail) {
+                toast.error(data.detail);
+                if (error.response?.status === 409) {
+                    navigate("/customer/active-loads");
+                }
+            } else if (data && typeof data === "object") {
                 const messages = Object.entries(data).map(([field, value]) => {
                     const detail = Array.isArray(value)
                         ? value.join(", ")
@@ -63,36 +129,51 @@ export default function CreateLoad() {
 
                 toast.error(messages.join(" | "));
             } else {
-                toast.error("Unable to create load. Please try again.");
+                toast.error(
+                    isEditMode
+                        ? "Unable to update shipment. Please try again."
+                        : "Unable to create load. Please try again."
+                );
             }
-
-            console.error("Create load error:", data || error.message);
         } finally {
             setLoading(false);
         }
     };
 
+    if (fetchingLoad) {
+        return (
+            <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white py-20 text-center text-slate-500">
+                Loading shipment details...
+            </div>
+        );
+    }
+
     return (
         <div className="mx-auto max-w-3xl">
             <button
                 type="button"
-                onClick={() => navigate("/customer/dashboard")}
+                onClick={() =>
+                    navigate(
+                        isEditMode ? "/customer/active-loads" : "/customer/dashboard"
+                    )
+                }
                 className="mb-6 text-sm font-medium text-slate-600 hover:text-slate-900"
             >
-                ← Back to Dashboard
+                ← {isEditMode ? "Back to Active Loads" : "Back to Dashboard"}
             </button>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <h1 className="text-2xl font-bold text-slate-900">
-                    Create a Shipment
+                    {isEditMode ? `Edit Shipment #${id}` : "Create a Shipment"}
                 </h1>
 
                 <p className="mt-2 text-sm text-slate-500">
-                    Pin your exact pickup and delivery locations so drivers can match and navigate to your route.
+                    {isEditMode
+                        ? "Update route pins, dates, weight, or offered price before a driver accepts."
+                        : "Pin your exact pickup and delivery locations so drivers can match and navigate to your route."}
                 </p>
 
                 <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-                    {/* Stacked full-width map pickers so the embedded map has plenty of room */}
                     <LocationPickerField
                         label="Exact Pickup Location"
                         placeholder="Search pickup warehouse/address or pin on map"
@@ -204,7 +285,11 @@ export default function CreateLoad() {
                                 type="date"
                                 value={formData.pickup_date}
                                 onChange={handleChange}
-                                min={new Date().toLocaleDateString("en-CA")}
+                                min={
+                                    isEditMode
+                                        ? undefined
+                                        : new Date().toLocaleDateString("en-CA")
+                                }
                                 required
                                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
                             />
@@ -258,7 +343,13 @@ export default function CreateLoad() {
                         disabled={loading}
                         className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        {loading ? "Creating Shipment..." : "Create Shipment"}
+                        {loading
+                            ? isEditMode
+                                ? "Saving Changes..."
+                                : "Creating Shipment..."
+                            : isEditMode
+                              ? "Save Changes"
+                              : "Create Shipment"}
                     </button>
                 </form>
             </div>

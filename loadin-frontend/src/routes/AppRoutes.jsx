@@ -66,7 +66,8 @@ function AppRoutes() {
                         <Route path="history" element={<CustomerHistory />} />
                         <Route path="profile" element={<CustomerProfile />} />
                         <Route path="dashboard" element={<CustomerDashboard />} />
-                        <Route path="create-load" element={<CreateLoad />} />
+                        <Route path="/customer/create-load" element={<CreateLoad />} />
+                        <Route path="/customer/loads/:id/edit" element={<CreateLoad />} />
                     </Route>
                 </Route>
 
