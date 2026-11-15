@@ -164,7 +164,7 @@ export default function CustomerActiveLoads() {
                                         Shipment #{load.id}
                                     </p>
                                     <h3 className="mt-1 text-lg font-bold text-slate-900">
-                                        {load.pickup_location}
+                                        {load.goods_description || "No description provided"}
                                     </h3>
                                 </div>
 
