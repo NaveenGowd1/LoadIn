@@ -1,5 +1,10 @@
 from django.db import models
 from accounts.models import CustomUser
+import secrets
+
+
+def generate_otp():
+    return f"{secrets.randbelow(10000):04d}"
 
 
 class Load(models.Model):
@@ -73,6 +78,15 @@ class Load(models.Model):
     pickup_longitude = models.FloatField(null=True, blank=True)
     delivery_latitude = models.FloatField(null=True, blank=True)
     delivery_longitude = models.FloatField(null=True, blank=True)
+    pickup_otp = models.CharField(max_length=6, blank=True, default="")
+    delivery_otp = models.CharField(max_length=6, blank=True, default="")
+
+    def save(self, *args, **kwargs):
+        if not self.pickup_otp:
+            self.pickup_otp = generate_otp()
+        if not self.delivery_otp:
+            self.delivery_otp = generate_otp()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return (

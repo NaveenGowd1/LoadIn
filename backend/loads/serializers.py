@@ -83,29 +83,48 @@ class LoadSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Load
-        fields = [
-            "id",
-            "customer",
-            "assigned_driver",
-            "driver",
-            "pickup_location",
-            "pickup_latitude",
-            "pickup_longitude",
-            "delivery_location",
-            "delivery_latitude",
-            "delivery_longitude",
-            "goods_description",
-            "weight",
-            "vehicle_type",
-            "pickup_date",
-            "delivery_date",
-            "price",
-            "status",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "customer", "assigned_driver", "status", "created_at", "updated_at"]
+            model = Load
+            fields = [
+                "id",
+                "customer",
+                "assigned_driver",
+                "driver",
+                "pickup_location",
+                "pickup_latitude",
+                "pickup_longitude",
+                "delivery_location",
+                "delivery_latitude",
+                "delivery_longitude",
+                "goods_description",
+                "weight",
+                "vehicle_type",
+                "pickup_date",
+                "delivery_date",
+                "price",
+                "status",
+                "pickup_otp",
+                "delivery_otp",
+                "created_at",
+                "updated_at",
+            ]
+            read_only_fields = [
+                "id",
+                "customer",
+                "assigned_driver",
+                "status",
+                "pickup_otp",
+                "delivery_otp",
+                "created_at",
+                "updated_at",
+            ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if not request or request.user != instance.customer:
+            data.pop("pickup_otp", None)
+            data.pop("delivery_otp", None)
+        return data
 
     def validate(self, attrs):
 

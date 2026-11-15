@@ -251,132 +251,104 @@ class LoadDetailAPIView(generics.RetrieveAPIView):
         )
         
 class StartLoadAPIView(generics.GenericAPIView):
-
     permission_classes = [
         IsAuthenticated,
         IsDriver,
     ]
 
+    @transaction.atomic
     def post(self, request, pk):
-
         try:
-            load = Load.objects.get(pk=pk)
-
+            load = Load.objects.select_for_update().get(pk=pk)
         except Load.DoesNotExist:
-            raise NotFound(
-                "Load does not exist."
-            )
+            raise NotFound("Load does not exist.")
 
-        # Check if the requesting driver is assigned to this load
         if load.assigned_driver != request.user:
             return Response(
-                {
-                    "detail":
-                    "You are not assigned to this load."
-                },
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "You are not assigned to this load."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check if the load is in the correct status to start
         if load.status != Load.Status.ASSIGNED:
             return Response(
-                {
-                    "detail":
-                    "This load cannot be started at this time."
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "This load cannot be started at this time."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update the load status to IN_TRANSIT
+        submitted_otp = str(request.data.get("otp", "")).strip()
+        if load.pickup_otp and submitted_otp != load.pickup_otp:
+            return Response(
+                {"detail": "Invalid Pickup OTP. Ask the sender for the 4-digit pickup code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         load.status = Load.Status.IN_TRANSIT
-        load.save(
-        update_fields=[
-            "status",
-            "updated_at",
-        ]
-    )
-        
+        load.save(update_fields=["status", "updated_at"])
+
         LoadStatusHistory.objects.create(
-        load=load,
-        status=Load.Status.IN_TRANSIT,
-        changed_by=request.user
-    )
+            load=load,
+            status=Load.Status.IN_TRANSIT,
+            changed_by=request.user,
+        )
 
         return Response(
             {
-                "message":
-                "Load has been started successfully.",
-                "load_id":
-                load.id,
-                "status":
-                load.status,
+                "message": "Pickup verified. Load is now in transit.",
+                "load_id": load.id,
+                "status": load.status,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
-        
-class DeliverLoadAPIView(generics.GenericAPIView):
 
+
+class DeliverLoadAPIView(generics.GenericAPIView):
     permission_classes = [
         IsAuthenticated,
         IsDriver,
     ]
 
+    @transaction.atomic
     def post(self, request, pk):
-
         try:
-            load = Load.objects.get(pk=pk)
-
+            load = Load.objects.select_for_update().get(pk=pk)
         except Load.DoesNotExist:
-            raise NotFound(
-                "Load does not exist."
-            )
+            raise NotFound("Load does not exist.")
 
-        # Check if the requesting driver is assigned to this load
         if load.assigned_driver != request.user:
             return Response(
-                {
-                    "detail":
-                    "You are not assigned to this load."
-                },
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "You are not assigned to this load."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check if the load is in the correct status to deliver
         if load.status != Load.Status.IN_TRANSIT:
             return Response(
-                {
-                    "detail":
-                    "This load cannot be delivered at this time."
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "This load cannot be delivered at this time."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update the load status to DELIVERED
-        load.status = Load.Status.DELIVERED
+        submitted_otp = str(request.data.get("otp", "")).strip()
+        if load.delivery_otp and submitted_otp != load.delivery_otp:
+            return Response(
+                {"detail": "Invalid Delivery OTP. Ask the receiver for the 4-digit delivery code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        load.save(
-            update_fields=[
-                "status",
-                "updated_at",
-            ]
-        )
+        load.status = Load.Status.DELIVERED
+        load.save(update_fields=["status", "updated_at"])
 
         LoadStatusHistory.objects.create(
             load=load,
             status=Load.Status.DELIVERED,
-            changed_by=request.user
+            changed_by=request.user,
         )
 
         return Response(
             {
-                "message":
-                "Load has been delivered successfully.",
-                "load_id":
-                load.id,
-                "status":
-                load.status,
+                "message": "Delivery verified. Load marked as delivered.",
+                "load_id": load.id,
+                "status": load.status,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
         
 from rest_framework import generics, status
