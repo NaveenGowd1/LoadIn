@@ -68,6 +68,11 @@ class Load(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True
     )
+    
+    pickup_latitude = models.FloatField(null=True, blank=True)
+    pickup_longitude = models.FloatField(null=True, blank=True)
+    delivery_latitude = models.FloatField(null=True, blank=True)
+    delivery_longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return (

@@ -387,6 +387,21 @@ from rest_framework.exceptions import NotFound
 from accounts.permissions import IsCustomer
 from .models import Load
 
+import math
+
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    r = 6371.0  # Earth radius in km
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    d_phi = math.radians(lat2 - lat1)
+    d_lambda = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(d_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
+    )
+    return 2 * r * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
 
 class CancelLoadAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated, IsCustomer]
@@ -445,42 +460,73 @@ class LoadHistoryAPIView(generics.ListAPIView):
         ).order_by("changed_at")
         
 class MatchLoadsAPIView(APIView):
-
     permission_classes = [IsAuthenticated, IsDriver]
 
     def post(self, request):
-
         serializer = MatchLoadsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        current_location = serializer.validated_data["current_location"]
-        return_destination = serializer.validated_data["return_destination"]
+        data = serializer.validated_data
 
         try:
             driver_profile = request.user.driver_profile
         except DriverProfile.DoesNotExist:
             return Response(
                 {"detail": "Please complete your driver profile first."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        matching_loads = Load.objects.filter(
-            status=Load.Status.AVAILABLE,
-            vehicle_type=driver_profile.vehicle_type,
-            pickup_location__icontains=current_location,
-            delivery_location__icontains=return_destination
-        ).order_by("-price", "-created_at")
-
-        response_serializer = LoadSerializer(
-            matching_loads,
-            many=True
+        base_qs = (
+            Load.objects
+            .select_related("customer", "assigned_driver", "assigned_driver__driver_profile")
+            .filter(
+                status=Load.Status.AVAILABLE,
+                vehicle_type=driver_profile.vehicle_type,
+            )
+            .order_by("-price", "-created_at")
         )
 
+        cur_lat = data.get("current_latitude")
+        cur_lng = data.get("current_longitude")
+        dest_lat = data.get("destination_latitude")
+        dest_lng = data.get("destination_longitude")
+        radius_km = data.get("radius_km", 30.0)
+
+        # Coordinate-based radius matching when pins are provided
+        if None not in (cur_lat, cur_lng, dest_lat, dest_lng):
+            matched = []
+            for load in base_qs:
+                if None not in (
+                    load.pickup_latitude,
+                    load.pickup_longitude,
+                    load.delivery_latitude,
+                    load.delivery_longitude,
+                ):
+                    pickup_dist = haversine_km(
+                        cur_lat, cur_lng, load.pickup_latitude, load.pickup_longitude
+                    )
+                    drop_dist = haversine_km(
+                        dest_lat, dest_lng, load.delivery_latitude, load.delivery_longitude
+                    )
+                    if pickup_dist <= radius_km and drop_dist <= radius_km:
+                        matched.append(load)
+            matching_loads = matched
+        else:
+            # Fallback to text search
+            current_location = data.get("current_location", "").strip()
+            return_destination = data.get("return_destination", "").strip()
+            if current_location:
+                base_qs = base_qs.filter(pickup_location__icontains=current_location)
+            if return_destination:
+                base_qs = base_qs.filter(delivery_location__icontains=return_destination)
+            matching_loads = list(base_qs)
+
+        response_serializer = LoadSerializer(matching_loads, many=True)
+
         return Response({
-            "count": matching_loads.count(),
-            "current_location": current_location,
-            "return_destination": return_destination,
-            "results": response_serializer.data
+            "count": len(matching_loads),
+            "current_location": data.get("current_location", ""),
+            "return_destination": data.get("return_destination", ""),
+            "results": response_serializer.data,
         })
         
 class DriverLoadHistoryAPIView(generics.ListAPIView):

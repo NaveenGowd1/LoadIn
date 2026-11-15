@@ -86,8 +86,15 @@ class LoadSerializer(serializers.ModelSerializer):
         model = Load
         fields = [
             "id",
+            "customer",
+            "assigned_driver",
+            "driver",
             "pickup_location",
+            "pickup_latitude",
+            "pickup_longitude",
             "delivery_location",
+            "delivery_latitude",
+            "delivery_longitude",
             "goods_description",
             "weight",
             "vehicle_type",
@@ -95,18 +102,10 @@ class LoadSerializer(serializers.ModelSerializer):
             "delivery_date",
             "price",
             "status",
-            "customer",
-            "driver",
             "created_at",
+            "updated_at",
         ]
-
-        read_only_fields = [
-            "id",
-            "status",
-            "customer",
-            "driver",
-            "created_at",
-        ]
+        read_only_fields = ["id", "customer", "assigned_driver", "status", "created_at", "updated_at"]
 
     def validate(self, attrs):
 
@@ -126,6 +125,15 @@ class LoadSerializer(serializers.ModelSerializer):
         return attrs
 
 class MatchLoadsSerializer(serializers.Serializer):
+    current_location = serializers.CharField(required=False, allow_blank=True)
+    current_latitude = serializers.FloatField(required=False, allow_null=True)
+    current_longitude = serializers.FloatField(required=False, allow_null=True)
+
+    return_destination = serializers.CharField(required=False, allow_blank=True)
+    destination_latitude = serializers.FloatField(required=False, allow_null=True)
+    destination_longitude = serializers.FloatField(required=False, allow_null=True)
+
+    radius_km = serializers.FloatField(required=False, default=30.0, min_value=1.0, max_value=500.0)
     current_location = serializers.CharField(
         max_length=255,
         trim_whitespace=True
