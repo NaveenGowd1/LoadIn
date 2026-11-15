@@ -185,3 +185,41 @@ class DriverLoadHistorySerializer(serializers.ModelSerializer):
             "updated_at",
             "status_history",
         ]
+        
+class LoadUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Load
+        fields = [
+            "pickup_location",
+            "pickup_latitude",
+            "pickup_longitude",
+            "delivery_location",
+            "delivery_latitude",
+            "delivery_longitude",
+            "goods_description",
+            "weight",
+            "vehicle_type",
+            "pickup_date",
+            "delivery_date",
+            "price",
+        ]
+
+    def validate_weight(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Weight must be greater than 0.")
+        return value
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Offered price must be greater than 0.")
+        return value
+
+    def validate(self, attrs):
+        pickup_date = attrs.get("pickup_date", getattr(self.instance, "pickup_date", None))
+        delivery_date = attrs.get("delivery_date", getattr(self.instance, "delivery_date", None))
+
+        if pickup_date and delivery_date and delivery_date < pickup_date:
+            raise serializers.ValidationError(
+                {"delivery_date": "Delivery date cannot be earlier than pickup date."}
+            )
+        return attrs

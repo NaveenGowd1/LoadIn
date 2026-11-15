@@ -524,3 +524,56 @@ class DriverLoadHistoryAPIView(generics.ListAPIView):
             .order_by("-updated_at")
         )
         
+from django.db import transaction
+from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from .models import Load
+from .serializers import LoadSerializer, LoadUpdateSerializer
+
+
+class EditLoadAPIView(generics.GenericAPIView):
+    serializer_class = LoadUpdateSerializer
+    permission_classes = [
+        IsAuthenticated,
+        IsCustomer,
+    ]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        try:
+            load = Load.objects.select_for_update().get(pk=pk)
+        except Load.DoesNotExist:
+            raise NotFound("Load does not exist.")
+
+        if load.customer != request.user:
+            return Response(
+                {"detail": "You do not have permission to edit this load."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if load.status != Load.Status.AVAILABLE:
+            return Response(
+                {
+                    "detail": (
+                        f"Cannot edit shipment while its status is '{load.status}'. "
+                        "Only AVAILABLE shipments can be modified."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = self.get_serializer(load, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_data = LoadSerializer(load, context={"request": request}).data
+        return Response(
+            {
+                "message": "Shipment updated successfully.",
+                "load": response_data,
+            },
+            status=status.HTTP_200_OK,
+        )
